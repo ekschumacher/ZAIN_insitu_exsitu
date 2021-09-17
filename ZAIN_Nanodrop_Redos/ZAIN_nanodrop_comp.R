@@ -10,9 +10,9 @@
 
 ##Load in file
 #set working directory
-setwd("G:\\Shared drives\\Emily_Schumacher\\ZAIN\\ZAIN_Nanodrop_Redos")
+setwd("C:\\Users\\eschumacher\\Documents\\GitHub\\ZAIN_insitu_exsitu\\ZAIN_Nanodrop_Redos")
 #load dataframe 
-ZAIN_nano_redo <- read.csv("ZAIN_nano_redo.csv")
+ZAIN_nano_redo <- read.csv("Data_Files\\ZAIN_nano_redo.csv")
 
 #######################
 ###### Analysis #######
@@ -25,7 +25,7 @@ carb_contam <- cbind(ZAIN_nano_redo$ï..Ind,
 
 ##then test for normality   
 #plot histograms 
-pdf("histogram_260_230.pdf", width = 8, height = 6)
+pdf("Figures\\histogram_260_230.pdf", width = 8, height = 6)
 hist(carb_contam[,2], main = "Before Blank Switch", xlab = "260/230 Ratio")
 hist(carb_contam[,3], main = "After Blank Switch", xlab = "260/230 Ratio")
 dev.off()
@@ -37,7 +37,7 @@ shapiro.test(carb_contam[,3])
 wilcox.test(carb_contam[,2], carb_contam[,3], paired = TRUE)
 
 ##plot boxplot
-pdf("boxplot_260_230.pdf", width = 8, height = 6)
+pdf("Figures\\boxplot_260_230.pdf", width = 8, height = 6)
 boxplot(carb_contam[,2], carb_contam[,3], ylim = c(-10, 15), 
         names = c("Before Blank Switch", "After Blank Switch"),
         xlab = "Treatment", ylab = "260/230 Ratio")
@@ -49,7 +49,7 @@ RNA_contam <- cbind(ZAIN_nano_redo$ï..Ind,
 
 ##then test for normality   
 #plot histograms 
-pdf("histogram_260_280.pdf", width = 8, height = 6)
+pdf("Figures\\histogram_260_280.pdf", width = 8, height = 6)
 hist(RNA_contam[,2], main = "Before Blank Switch", xlab = "260/280 Ratio", 
      xlim = c(1,2.5))
 hist(RNA_contam[,3], main = "After Blank Switch", xlab = "260/280 Ratio", 
@@ -63,7 +63,7 @@ shapiro.test(RNA_contam[,3])
 wilcox.test(RNA_contam[,2], RNA_contam[,3], paired = TRUE)
 
 ##Plot boxplot 
-pdf("boxplot_260_280.pdf", width = 8, height = 6)
+pdf("Figures\\boxplot_260_280.pdf", width = 8, height = 6)
 boxplot(RNA_contam[,2], RNA_contam[,3], ylim = c(1, 2.5),
         names = c("Before Blank Switch", "After Blank Switch"),
         xlab = "Treatment", ylab = "260/280 Ratio")
