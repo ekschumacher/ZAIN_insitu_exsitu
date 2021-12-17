@@ -11,6 +11,7 @@ library(adegenet)
 library(diveRsity)
 library(poppr)
 library(hierfstat)
+library(Demerelate)
 
 ##################################
 ####### Load in data files #######
@@ -36,32 +37,51 @@ levels(ZAIN_garden_wild_gen@pop) <- unique(ZAIN_garden_wild_df$Pop)
 ##name the individuals in the genind 
 rownames(ZAIN_garden_wild_gen@tab) <- ZAIN_garden_wild_df$Sample.Name
 
-#########################################################
-##### Remove clones, missing data, and siblings #########
-#########################################################
+#############################################################
+######## Remove individuals with too much missing data ######
+#############################################################
 ##remove individuals with too much missing data 
 ZAIN_garden_wild_gen <- missingno(ZAIN_garden_wild_gen, type = "geno", cutoff = 0.25, quiet = FALSE, freq = FALSE)
 
-#First put into poppr format
-ZAIN_garden_clones <- as.genclone(ZAIN_garden_gen)
-strata(ZAIN_garden_clones) <- other(ZAIN_garden_clones)$population_hierarchy[-1]
-list_a<-mlg.id(ZAIN_garden_clones)
+##################################
+########## Remove clones #########
+##################################
+##Create a list of clones from the ZAIN inds 
+ZAIN_clones <- as.genclone(ZAIN_garden_wild_gen)
+##setting the population levels for the genind   
+strata(ZAIN_clones) <- other(ZAIN_clones)$population_hierarchy[-1]
+##create MLG list 
+ZAIN_mlg_list <- mlg.id(ZAIN_clones)
 #Function to pull out individual indices where clone length greater than 1
-clone_index<-which(sapply(list_a,function(x) length(x)>1))
-write.csv(list_a[clone_index],file=paste0(species_names[sp],"clones.csv"))
+ZAIN_clone_index <- which(sapply(ZAIN_mlg_list, function(x) length(x)>1))
+write.csv(ZAIN_mlg_list[ZAIN_clone_index],file = "C:\\Users\\eschumacher\\Documents\\GitHub\\ZAIN_insitu_exsitu\\Data_Files\\ZAIN_data_frames\\ZAIN_clone_list.csv")
 
-#This removes clones and then saves as new file for Genealex if desired
-popr_nocl<-clonecorrect(ZAIN_garden_clones,strata=~Pop)
-#genind2genalex(genclone2genind(popr_nocl),file="QH_clone_free.csv")
+#This removes clones and then saves as new file for Genlex if desired
+ZAIN_nocl <- clonecorrect(ZAIN_garden_wild_gen, strata=~Pop)
+genind2genalex(genclone2genind(ZAIN_nocl),file="C:\\Users\\eschumacher\\Documents\\GitHub\\ZAIN_insitu_exsitu\\Data_Files\\ZAIN_geninds\\ZAIN_garden_wild_nocl.csv")
 
-#Create genpop and genind objects that now have no clones- GI_nocl, GP_nocl
-ZAIN_garden_noclones <-genclone2genind(popr_nocl)
+###################################################
+############ Relatedness Reduction ################
+###################################################
+###reduce relatedness
+ZAIN_reorg_relate_df <- Demerelate(ZAIN_garden_wild_df, object = T, value = "loiselle")
 
-##create poppr file 
-ZAIN_poppr <- poppr(ZAIN_garden_noclones)
+##now identify how many individuals have greater than 25% relatedness = half siblings
+ZAIN_halfsib_names <- names(which(unlist(ZAIN_reorg_relate_df$Empirical_Relatedness) > 0.25))
 
-##expected heterozygosity 
-ZAIN_hexp <- ZAIN_poppr[1:10, 10]
+##then use this to create a document which has all the unique individual numbers for every highly related individuals
+ZAIN_halfsib_names_cleanfront <- gsub("^.*\\.","", ZAIN_halfsib_names)
 
-##
-ZAIN_all_rich <- colMeans(allelic.richness(ZAIN_garden_noclones)$Ar)
+ZAIN_halfsib_names_cleanback <- gsub("^.*\\_","", ZAIN_halfsib_names_cleanfront)
+
+ZAIN_relate_ind_remove <- unique(ZAIN_halfsib_names_cleanback)
+
+##then subset genind file
+butternutgen_relatedness_reduced <- butternutgen_nomd[!rownames(butternutgen_nomd@tab) %in% relate_ind_remove,]
+
+##subset data frame 
+reorg_relatedness_reduced <- reorg_relatedness[!reorg_relatedness$Ind %in% relate_ind_remove,]
+
+###name pops
+levels(butternutgen_relatedness_reduced@pop) <- butternut_24pop_names
+
