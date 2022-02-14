@@ -1,11 +1,12 @@
-###This is the first script for the Zamia integrifolia in situ/ex situ project. 
-##We are comparing ex situ collection of wild diversity for the rare cycad Zamia integrifolia
-#This script will focus on individual reduction based on missing data and relatedness
+##This is the first script for the Zamia integrifolia in situ/ex situ project. 
+#We are comparing ex situ collection of wild diversity for the rare cycad Zamia 
+#integrifolia. This script will focus on individual reduction based 
+#on missing data and relatedness
 
 #############################
 #         Libraries         # 
 #############################
-##load in packages
+
 library(adegenet)
 library(diveRsity)
 library(poppr)
@@ -15,24 +16,24 @@ library(Demerelate)
 ###################################
 #        Load in data files       #
 ###################################
-##set working directory
+#set working directory
 setwd("../Data_Files")
 
-##convert to a genepop file if necessary
+#convert to a genepop file if necessary
 #arp2gen("ZAIN_adegenet_files/ZAIN_allpop.arp")
 
-##load in genind 
+#load in genind 
 ZAIN_allpop_gen <- read.genepop("ZAIN_adegenet_files/ZAIN_allpop.gen", ncode = 3)
 
-##ZAIN score df 
+#ZAIN score df 
 ZAIN_allpop_df <- read.csv("ZAIN_data_frames/ZAIN_allpop_df.csv")
 
-##create a population names list 
+#create a population names list 
 ZAIN_allpop_names <- unique(ZAIN_allpop_df$Pop)
-##name populations in the genind object  
+#name populations in the genind object  
 levels(ZAIN_allpop_gen@pop) <- ZAIN_allpop_names
 
-##name the individuals in the genind object
+#name the individuals in the genind object
 rownames(ZAIN_allpop_gen@tab) <- ZAIN_allpop_df$Sample.Name
 
 ########################################################
@@ -63,17 +64,8 @@ write.csv(ZAIN_allpop_clean_df, "ZAIN_data_frames/ZAIN_allpop_clean_df.csv")
 ######################################
 #       Relatedness Reduction        #
 ######################################
-##limit data frames 
-ZAIN_garden_clean_df <- ZAIN_allpop_clean_df[ZAIN_allpop_clean_df$Garden_Wild == "Garden",]
-ZAIN_wild_clean_df <- ZAIN_allpop_clean_df[ZAIN_allpop_clean_df$Garden_Wild == "Wild",]
-
-##limit by individuals and populations 
-ZAIN_garden_clean_gen <- ZAIN_allpop_clean_gen[rownames(ZAIN_allpop_clean_gen@tab) %in% ZAIN_garden_clean_df$Sample.Name,]
-ZAIN_wild_clean_gen <- ZAIN_allpop_clean_gen[rownames(ZAIN_allpop_clean_gen@tab) %in% ZAIN_wild_clean_df$Sample.Name,]
-
-##create lists of these objects 
-ZAIN_df_list <- list(ZAIN_garden_clean_df, ZAIN_wild_clean_df)
-ZAIN_gen_list <- list(ZAIN_garden_clean_gen, ZAIN_wild_clean_gen)
+##write a loop to reduce data by relatedness for the garden and wild individuals separately 
+ZAIN_relate_ind_remove <- list()
 
 ##list of pop type 
 pop_type_list <- c("Garden", "Wild")
@@ -97,16 +89,17 @@ for(pop_type in 1:length(pop_type_list)){
   
   ZAIN_halfsib_names_cleanback <- gsub("^.*\\_","", ZAIN_halfsib_names_cleanfront)
   
-  ZAIN_relate_ind_remove <- unique(ZAIN_halfsib_names_cleanback)
+  ZAIN_relate_ind_remove[[pop_type]] <- unique(ZAIN_halfsib_names_cleanback)
   
   ##first subset the genind object with the list 
-  ZAIN_rel_gen <- ZAIN_gen[!rownames(ZAIN_gen@tab) %in% ZAIN_relate_ind_remove,]
+  ZAIN_rel_gen <- ZAIN_gen[!rownames(ZAIN_gen@tab) %in%  ZAIN_relate_ind_remove[[pop_type]],]
   
   #write a genalex file 
-  genind2genalex(ZAIN_rel_gen, paste0("ZAIN_data_frames/ZAIN_rel_", pop_type_list[[pop_type]], "_genalex.csv"))
+  genind2genalex(ZAIN_rel_gen, paste0("ZAIN_data_frames/ZAIN_rel_", pop_type_list[[pop_type]], "_genalex.csv"),
+                 overwrite = TRUE)
   
   ##also reduce data frames by relatedness
-  ZAIN_rel_df <- ZAIN_df[ZAIN_df$Sample.Name %in%  ZAIN_relate_ind_remove,]
+  ZAIN_rel_df <- ZAIN_df[ZAIN_df$Sample.Name %in%  ZAIN_relate_ind_remove[[pop_type]],]
   
   ##write out data frame reduced for highly related individuals 
   write.csv(ZAIN_rel_df, paste0("ZAIN_data_frames/ZAIN_rel_", pop_type_list[[pop_type]], "_df.csv"))
